@@ -97,10 +97,15 @@ with st.sidebar:
 if "events" not in st.session_state:
     st.session_state["events"] = []
 
+# --- NEW: Audio Cooldown Tracker ---
+if "last_alert_time" not in st.session_state:
+    st.session_state["last_alert_time"] = -999.0
+
 status_text = st.empty()
 metric_row = st.empty()
 sri_alert = st.empty()
 chart_placeholder = st.empty()
+audio_placeholder = st.empty() # <-- Added placeholder for ElevenLabs audio
 
 st.markdown("---")
 st.subheader("Critical Risk Events Log")
@@ -207,6 +212,12 @@ if run_live:
                             "SRI_Score": round(float(sri_score), 1),
                             "Primary_Stressor": top_stressor
                         })
+                    
+                    # --- NEW: Autonomous ElevenLabs Voice Alert ---
+                    if current_time - st.session_state["last_alert_time"] > 10.0:
+                        audio_placeholder.empty() # Clear the old player
+                        audio_placeholder.audio("alert.mp3", format="audio/mp3", autoplay=True)
+                        st.session_state["last_alert_time"] = current_time
 
                 # UI
                 with metric_row.container():
