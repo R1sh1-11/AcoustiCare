@@ -53,7 +53,7 @@ For the best evaluation, test the app with audio that includes:
 ## 👥 The Team
 * **Jennet Ylyasova** — Medical Lead
 * **Rishi Nalam** — Engineer
-* **Emiliano Chahin** — Assistant Engineer
+* **Emiliano Chahin** — Engineer
 *(Built for Hack @ Davidson 2026)*
 
 ## 🔮 Future Work
