@@ -1,0 +1,9 @@
+streamlit
+tensorflow
+tensorflow-hub
+scipy
+numpy
+pandas
+matplotlib
+librosa
+pyaudio
