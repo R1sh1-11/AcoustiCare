@@ -181,11 +181,3 @@ else:
     # Still show the log even if mic is off!
     events_df = pd.DataFrame(st.session_state["events"])
     log_placeholder.dataframe(events_df, use_container_width=True)
-    if not events_df.empty:
-        csv = events_df.to_csv(index=False).encode('utf-8')
-        download_placeholder.download_button(
-            label="📥 Download Audit Log (CSV)",
-            data=csv,
-            file_name='acousticare_audit_log.csv',
-            mime='text/csv',
-        )
