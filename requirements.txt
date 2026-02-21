@@ -1,6 +1,6 @@
-streamlit
 tensorflow
 tensorflow-hub
+streamlit
 scipy
 numpy
 pandas
