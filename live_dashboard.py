@@ -67,10 +67,45 @@ if run_live:
             speech_prob = max_scores[SPEECH_IDX] * 100
             alarm_prob = min(sum([max_scores[idx] for idx in ALARM_INDICES]) * 100, 100.0)
             
-            # Calculate SRI (Normalize dB for the formula, assuming 100dB is max)
-            db_norm = min(db / 100.0, 1.0) 
-            sri_score = ((db_norm * 0.4) + ((alarm_prob/100) * 0.4) + ((speech_prob/100) * 0.2)) * 100
+            # --- NEW METRICS: Volatility & Instruction Confidence ---
+            # Calculate rolling volatility from the last 30 seconds of history
+            if len(history) > 1:
+                loud_volatility = np.std(history["Volume (dB)"]) / 100.0 # Normalized
+            else:
+                loud_volatility = 0.0
+            
+            # The Proxy Metric: If it's loud/volatile AND people are talking, instructions are likely lost.
+            instruction_confidence = max(0.0, 1.0 - ((speech_prob / 100.0) * loud_volatility)) * 100
 
+            # --- THE NEW SRI FORMULA ---
+            # 30% Volume | 30% Alarms | 20% Speech Density | 20% Loudness Volatility
+            db_norm = min(db / 100.0, 1.0) 
+            sri_score = ((db_norm * 0.3) + ((alarm_prob / 100) * 0.3) + ((speech_prob / 100) * 0.2) + (loud_volatility * 0.2)) * 100
+
+            # Update Data History
+            current_time = round(time.time() - start_time, 1)
+            new_row = pd.DataFrame({
+                "Time": [current_time], 
+                "Volume (dB)": [db], 
+                "Speech Prob": [speech_prob], 
+                "Alarm Prob": [alarm_prob],
+                "Volatility": [loud_volatility] # Added to history
+            })
+            history = pd.concat([history, new_row], ignore_index=True)
+            
+            # Keep only the last 30 seconds so the graph doesn't lag
+            if len(history) > 30:
+                history = history.iloc[-30:]
+
+            # --- LIVE UI UPDATES ---
+            with metric_row.container():
+                # Expanded to 5 columns to show off the new math!
+                c1, c2, c3, c4, c5 = st.columns(5)
+                c1.metric("Live Volume", f"{db:.1f} dB")
+                c2.metric("Speech Prob", f"{speech_prob:.1f}%")
+                c3.metric("Alarm Prob", f"{alarm_prob:.1f}%")
+                c4.metric("Volatility", f"{loud_volatility:.2f}")
+                c5.metric("Instruction Clarity", f"{instruction_confidence:.1f}%")
             # Update Data History
             current_time = round(time.time() - start_time, 1)
             new_row = pd.DataFrame({"Time": [current_time], "Volume (dB)": [db], "Speech Prob": [speech_prob], "Alarm Prob": [alarm_prob]})
