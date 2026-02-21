@@ -48,7 +48,7 @@ Our goal is to provide surgical teams with situational awareness about when the 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/or-soundscape-risk.git
+git clone https://github.com/YOUR-USERNAME/AcoustiCare.git
 cd or-soundscape-risk
 ```
 
