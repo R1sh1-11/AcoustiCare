@@ -49,7 +49,7 @@ Our goal is to provide surgical teams with situational awareness about when the 
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/AcoustiCare.git
-cd or-soundscape-risk
+cd AcoustiCare
 ```
 
 ### 2. Install dependencies
