@@ -164,6 +164,25 @@ top_peak_labels = [(yamnet_classes[i], float(probs[peak_chunk][i])) for i in top
 # -----------------------------
 # Display metrics
 # -----------------------------
+# --- CALCULATE SURGICAL RISK INDEX (SRI) ---
+# We weight Loudness (40%), Alarm Spikes (40%), and Speech/Chaos (20%)
+max_loudness = float(np.max(loud_norm))
+peak_alarm = float(np.max(alarm_prob))
+
+# The SRI Formula (0 to 100)
+sri_score = ( (max_loudness * 0.4) + (peak_alarm * 0.4) + (speech_fraction * 0.2) ) * 100
+
+st.markdown("---")
+st.subheader("Live Surgical Risk Index (SRI)")
+
+# Color code the metric based on danger level
+if sri_score < 40:
+    st.success(f"🟢 LOW RISK: {sri_score:.1f} / 100 (OR Environment is Stable)")
+elif sri_score < 75:
+    st.warning(f"🟡 ELEVATED RISK: {sri_score:.1f} / 100 (Monitor Cognitive Load)")
+else:
+    st.error(f"🔴 CRITICAL RISK: {sri_score:.1f} / 100 (High Noise & Alarm Fatigue!)")
+st.markdown("---")
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Duration (sec)", f"{duration_sec:.1f}")
 c2.metric("Avg loudness (0–1)", f"{float(np.mean(loud_norm)):.2f}")
