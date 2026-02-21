@@ -65,7 +65,6 @@ st.markdown("Upload surgical audio logs to analyze the **Surgical Risk Index (SR
 st.sidebar.header("Input")
 audio_file = st.sidebar.file_uploader("Upload audio (wav/mp3/m4a/ogg)", type=["wav", "mp3", "m4a", "ogg"])
 
-st.sidebar.header("AI Label Detection")
 speech_keywords = ["speech", "conversation", "narration", "shout", "screaming"]
 speech_idx = [i for i, c in enumerate(yamnet_classes) if any(k in c.lower() for k in speech_keywords)]
 
