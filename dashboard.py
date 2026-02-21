@@ -164,30 +164,53 @@ top_peak_labels = [(yamnet_classes[i], float(probs[peak_chunk][i])) for i in top
 # -----------------------------
 # Display metrics
 # -----------------------------
+
+# --- NEW METRICS: Volatility & Instruction Confidence ---
+loud_volatility = float(np.std(loud_norm))
+# Both speech_fraction and loud_volatility are 0-1 scales here
+instruction_confidence = max(0.0, 1.0 - (speech_fraction * loud_volatility)) * 100
+
 # --- CALCULATE SURGICAL RISK INDEX (SRI) ---
-# We weight Loudness (40%), Alarm Spikes (40%), and Speech/Chaos (20%)
-max_loudness = float(np.max(loud_norm))
+# We weight Avg Loudness (30%), Peak Alarms (30%), Speech Density (20%), and Volatility (20%)
+avg_loudness = float(np.mean(loud_norm))
 peak_alarm = float(np.max(alarm_prob))
 
-# The SRI Formula (0 to 100)
-sri_score = ( (max_loudness * 0.4) + (peak_alarm * 0.4) + (speech_fraction * 0.2) ) * 100
+vol_contrib = avg_loudness * 30
+alarm_contrib = peak_alarm * 30
+speech_contrib = speech_fraction * 20
+# Scale volatility slightly so it impacts the 100-point scale correctly
+volatility_contrib = min(loud_volatility * 2.0, 1.0) * 20 
+
+sri_score = vol_contrib + alarm_contrib + speech_contrib + volatility_contrib
+
+# Identify the Top Contributor
+components = {
+    "High Volume Levels": vol_contrib,
+    "Active Equipment Alarms": alarm_contrib,
+    "High Speech Density": speech_contrib,
+    "Acoustic Volatility (Chaos)": volatility_contrib
+}
+top_stressor = max(components, key=components.get)
 
 st.markdown("---")
-st.subheader("Live Surgical Risk Index (SRI)")
+st.subheader("Surgical Risk Index (SRI)")
 
 # Color code the metric based on danger level
 if sri_score < 40:
-    st.success(f"🟢 LOW RISK: {sri_score:.1f} / 100 (OR Environment is Stable)")
+    st.success(f"🟢 **LOW RISK: {sri_score:.1f} / 100** (OR Environment is Stable)")
 elif sri_score < 75:
-    st.warning(f"🟡 ELEVATED RISK: {sri_score:.1f} / 100 (Monitor Cognitive Load)")
+    st.warning(f"🟡 **ELEVATED RISK: {sri_score:.1f} / 100** (Monitor Cognitive Load)\n\n**Primary Stressor:** {top_stressor}")
 else:
-    st.error(f"🔴 CRITICAL RISK: {sri_score:.1f} / 100 (High Noise & Alarm Fatigue!)")
+    st.error(f"🔴 **CRITICAL RISK: {sri_score:.1f} / 100** (High Noise & Alarm Fatigue!)\n\n**Primary Stressor:** {top_stressor}")
 st.markdown("---")
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Duration (sec)", f"{duration_sec:.1f}")
-c2.metric("Avg loudness (0–1)", f"{float(np.mean(loud_norm)):.2f}")
-c3.metric("Speech activity (avg)", f"{speech_fraction:.2f}")
-c4.metric("Alarm activity (avg)", f"{alarm_fraction:.2f}")
+
+# Expanded to 5 columns to match the live dashboard UI
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Duration", f"{duration_sec:.1f}s")
+c2.metric("Speech Activity", f"{speech_fraction:.2f}")
+c3.metric("Peak Alarm", f"{peak_alarm:.2f}")
+c4.metric("Volatility", f"{loud_volatility:.2f}")
+c5.metric("Instruction Clarity", f"{instruction_confidence:.1f}%")
 
 # Timeline dataframe
 timeline = pd.DataFrame({
