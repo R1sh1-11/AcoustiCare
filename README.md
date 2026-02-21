@@ -1,110 +1,62 @@
-# AcoustiCare - OR Soundscape Risk Detector
+# 🎙️ AcoustiCare: OR Soundscape Risk Sentinel
 
 ## 🏥 Overview
+Operating rooms are acoustically complex environments. Between bone saws, overlapping conversations, and constant monitor beeps, surgeons suffer from severe **cognitive overload** and **alarm fatigue**. 
 
-Operating rooms are acoustically complex environments where excessive alarms, overlapping speech, and high noise levels can contribute to cognitive overload and potential safety risks.
+**AcoustiCare** is an Edge AI-powered acoustic sentinel that acts as a "Check Engine Light" for the surgical team. It analyzes sound patterns in real-time without sending sensitive patient audio to the cloud, producing an explainable **Surgical Risk Index (SRI)** to prevent communication breakdowns before they cause surgical errors.
 
-**AcoustiCare** is a real-time audio analysis tool that quantifies environmental stress in the operating room by analyzing sound patterns and producing an explainable risk score.
+## ✨ Key Features
+* **🔴 Live OR Monitor (`live_dashboard.py`):** Real-time acoustic analysis tracking live volume, speech density, and alarm probabilities using a browser-based dashboard.
+* **📂 Post-Op Audit Dashboard (`dashboard.py`):** A secure file-uploader for hospital administrators to review post-operative acoustic logs and identify environmental stressors.
+* **🧠 Advanced Spike Detection:** Uses `scipy.signal` to track actual *Alarm Spikes per Minute*, moving beyond simple probability to clinical-grade event tracking.
+* **⚖️ Interactive SRI Tuning:** Dynamic sidebar sliders allow teams to adjust the mathematical weights of Loudness, Volatility, Speech Density, and Alarms on the fly.
+* **📥 Immutable Audit Logs:** Automatically logs "Critical Risk Events" (SRI > 75) with timestamp and primary stressor, exportable to CSV for post-op review.
 
-The system identifies key contributors such as:
+## 🛠️ The Tech Stack
+* **Frontend:** Streamlit
+* **Edge AI:** TensorFlow Hub (YAMNet) for localized, HIPAA-compliant audio classification
+* **Audio Processing:** PyAudio, Librosa
+* **Math & Data:** NumPy, Pandas, SciPy
 
-* Speech density
-* Alarm/equipment activity
-* Overall loudness
-* Acoustic burstiness (interruptions)
+## 🚀 Installation & Usage
 
-Our goal is to provide surgical teams with situational awareness about when the environment may be drifting into a high-risk state.
-
----
-
-## ✨ Features
-
-* 🎧 Audio upload and analysis
-* 📊 Real-time cognitive load / risk scoring
-* 🔍 Explainable “top contributors” output
-* 📈 Timeline visualization of sound activity
-* ⚙️ Adjustable risk weighting
-
----
-
-## 🧠 How It Works
-
-1. Audio is split into short time windows.
-2. A pretrained audio model (YAMNet) classifies sound events.
-3. The system estimates:
-
-   * speech presence
-   * alarm/equipment presence
-   * loudness
-   * burst frequency
-4. These signals are combined into an interpretable risk score.
-
-> ⚠️ This is a research prototype and not a medical device.
-
----
-
-## 🚀 Installation
-
-### 1. Clone the repository
-
+**1. Clone the repository**
 ```bash
-git clone https://github.com/YOUR-USERNAME/AcoustiCare.git
+git clone [https://github.com/R1sh1-11/AcoustiCare.git](https://github.com/R1sh1-11/AcoustiCare.git)
 cd AcoustiCare
 ```
 
-### 2. Install dependencies
-
+**2. Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Run the app
+**3. Run the Applications**
+Because we prioritize stability and security, AcoustiCare is split into two independent modules:
 
+*To run the Post-Op Audit Dashboard (Static Files):*
 ```bash
-streamlit run app.py
+streamlit run dashboard.py
 ```
 
-Then open: http://localhost:8501
-
----
+*To run the Live OR Monitor (Real-time Mic):*
+```bash
+streamlit run live_dashboard.py
+```
 
 ## 🧪 Demo Tips
+For the best evaluation, test the app with audio that includes:
+* Overlapping speech
+* Sudden, loud equipment alarms (set the AI threshold/boost via the sidebar)
+* Periods of chaotic, volatile noise (rustling, dropping items)
 
-For best results, test with audio that includes:
-
-* overlapping speech
-* alarm or beep sounds
-* varying noise levels
-
----
-
-## 👥 Team
-
+## 👥 The Team
 * **Jennet Ylyasova** — Medical Lead
 * **Rishi Nalam** — Engineer
 * **Emiliano Chahin** — Assistant Engineer
-
-*(Davidson Hackathon 2026)*
-
----
-
-## ⚠️ Limitations
-
-* Uses general audio classification (not OR-specific training)
-* Not validated for clinical decision-making
-* Intended for demonstration and research purposes only
-
----
+*(Built for Hack @ Davidson 2026)*
 
 ## 🔮 Future Work
-
-* OR-specific model fine-tuning
-* Integration with OR workflow phases
-* Multimodal inputs (vitals, HRV, etc.)
-* Clinical validation studies
-
----
-
-## 📜 License
-
-MIT License
+* **Federated Learning:** Train the YAMNet model on specific medical sounds across multiple institutions without ever sharing raw audio data.
+* **Smart OR Integration:** Interface with IoT devices to automatically mitigate noise (e.g., automatically dimming non-essential lights) when SRI thresholds are exceeded.
+* **Visual Stress Analysis:** Incorporate computer vision to correlate acoustic stress with surgeon micro-expressions and ergonomics.
