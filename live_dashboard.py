@@ -20,7 +20,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 
 ALARM_MULTIPLIER = 2.5
-CRITICAL_THRESHOLD = 60.0       # Lowered to 60 for easier demo triggering
+CRITICAL_THRESHOLD = 55.0       # Lowered to 55 for easier demo triggering
 LOG_COOLDOWN_SEC = 3.0          
 ALERT_COOLDOWN_SEC = 10.0       
 
