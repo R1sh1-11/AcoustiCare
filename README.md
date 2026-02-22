@@ -9,8 +9,7 @@ Operating rooms are acoustically complex environments. Between bone saws, overla
 * **🔴 Live OR Monitor (`live_dashboard.py`):** Real-time acoustic analysis tracking live volume, speech density, and alarm probabilities using a browser-based dashboard.
 * **📂 Post-Op Audit Dashboard (`dashboard.py`):** A secure file-uploader for hospital administrators to review post-operative acoustic logs and identify environmental stressors.
 * **🧠 Advanced Spike Detection:** Uses `scipy.signal` to track actual *Alarm Spikes per Minute*, moving beyond simple probability to clinical-grade event tracking.
-* **⚖️ Interactive SRI Tuning:** Dynamic sidebar sliders allow teams to adjust the mathematical weights of Loudness, Volatility, Speech Density, and Alarms on the fly.
-* **📥 Immutable Audit Logs:** Automatically logs "Critical Risk Events" (SRI > 75) with timestamp and primary stressor, exportable to CSV for post-op review.
+* **📥 Immutable Audit Logs:** Automatically logs "Critical Risk Events" (SRI > 60) with timestamp and primary stressor, exportable to CSV for post-op review.
 
 ## 🛠️ The Tech Stack
 * **Frontend:** Streamlit
@@ -47,7 +46,7 @@ streamlit run live_dashboard.py
 ## 🧪 Demo Tips
 For the best evaluation, test the app with audio that includes:
 * Overlapping speech
-* Sudden, loud equipment alarms (set the AI threshold/boost via the sidebar)
+* Sudden, loud equipment alarms
 * Periods of chaotic, volatile noise (rustling, dropping items)
 
 ## 👥 The Team
