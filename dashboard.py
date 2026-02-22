@@ -9,6 +9,19 @@ from scipy.signal import find_peaks
 st.set_page_config(page_title="Static OR Monitor", layout="wide")
 TARGET_SR = 16000
 
+# --- HARDCODED DEMO SETTINGS (Synced with Live) ---
+alarm_multiplier = 2.5
+critical_threshold = 60.0    # Lowered to match live dashboard
+spike_height_pct = 35.0 
+spike_distance_sec = 1.0
+
+# --- ORIGINAL WEIGHTS ---
+w_volume = 25
+w_alarm  = 30
+w_speech = 20
+w_volat  = 15
+w_spike  = 10
+
 # -----------------------------
 # Load YAMNet + classes
 # -----------------------------
@@ -37,7 +50,6 @@ def load_audio(file):
         y = librosa.resample(y, orig_sr=sr, target_sr=TARGET_SR)
         sr = TARGET_SR
     y = y.astype(np.float32)
-    y = y / (np.max(np.abs(y)) + 1e-9)
     return y, sr
 
 def chunk_audio(y, sr, chunk_sec=1.0, hop_sec=1.0):
@@ -52,18 +64,16 @@ def chunk_audio(y, sr, chunk_sec=1.0, hop_sec=1.0):
         return np.zeros((0, chunk), dtype=np.float32), np.array([])
     return np.stack(chunks).astype(np.float32), np.array(times)
 
-def loudness_rms(chunks):
-    return np.sqrt(np.mean(chunks**2, axis=1) + 1e-12)
-
 def yamnet_probs_for_chunks(chunks):
+    norm_chunks = chunks / (np.max(np.abs(chunks)) + 1e-9)
     out = []
-    for c in chunks:
+    for c in norm_chunks:
         scores, _, _ = yamnet(c)
         out.append(scores.numpy().mean(axis=0))
     return np.stack(out) if len(out) else np.zeros((0, len(yamnet_classes)))
 
 def alarm_spikes_per_minute(alarm_prob: np.ndarray, times: np.ndarray,
-                            height: float = 0.35, distance_sec: float = 1.0) -> float:
+                            height: float, distance_sec: float) -> float:
     if len(alarm_prob) < 3 or len(times) < 3:
         return 0.0
     dt = float(np.median(np.diff(times))) if len(times) > 1 else 1.0
@@ -83,17 +93,7 @@ st.markdown("Upload surgical audio logs to analyze the **Surgical Risk Index (SR
 with st.sidebar:
     st.header("Upload")
     audio_file = st.file_uploader("Upload audio (wav/mp3/m4a/ogg)", type=["wav", "mp3", "m4a", "ogg"])
-
-    st.header("Alarm spike detection")
-    spike_height = st.slider("Alarm peak threshold (0..1)", 0.05, 0.95, 0.35, 0.05)
-    spike_distance = st.slider("Min seconds between spikes", 0.5, 5.0, 1.0, 0.5)
-
-    st.header("SRI weights (sum ≈ 100)")
-    w_volume = st.slider("Avg loudness weight", 0, 60, 25, 1)
-    w_alarm  = st.slider("Peak alarm weight", 0, 60, 30, 1)
-    w_speech = st.slider("Speech density weight", 0, 60, 20, 1)
-    w_volat  = st.slider("Volatility weight", 0, 60, 15, 1)
-    w_spike  = st.slider("Alarm spikes weight", 0, 60, 10, 1)
+    st.info("Demo mode engaged. Acoustic sensitivity locked to original project logic.")
 
 if not audio_file:
     st.info("Upload an audio clip to begin the audit. Tip: use a clip with clear alarms and overlapping speech.")
@@ -112,40 +112,50 @@ if len(chunks) == 0:
     st.error("Audio is too short for the selected chunk settings.")
     st.stop()
 
-with st.spinner("Running AI inference…"):
+with st.spinner("Running AI inference & Acoustic Analysis…"):
     probs = yamnet_probs_for_chunks(chunks)
 
-# loudness (normalized)
-rms = loudness_rms(chunks)
-rms95 = np.percentile(rms, 95) + 1e-9
-loud_norm = np.clip(rms / rms95, 0, 1)
+# --- MATH SYNC WITH LIVE DASHBOARD ---
 
-speech_prob = probs[:, speech_idx].max(axis=1) if len(speech_idx) else np.zeros(len(times))
-alarm_prob = np.clip(probs[:, alarm_idx].sum(axis=1), 0, 1) if len(alarm_idx) else np.zeros(len(times))
+# 1. Volume & dB Math (Simulating PyAudio int16 amplitude to match live mic)
+chunks_int16 = chunks * 32768.0
+rms_array = np.sqrt(np.mean(chunks_int16**2, axis=1) + 1e-12)
+db_array = np.clip(20 * np.log10(rms_array), 0, None)
 
-speech_fraction = float(np.mean(speech_prob))
-peak_alarm = float(np.max(alarm_prob))
-avg_loudness = float(np.mean(loud_norm))
-loud_volatility = float(np.std(loud_norm))
+# 2. Probability Math (Raw, no memory buffer)
+speech_prob_array = probs[:, speech_idx].max(axis=1) * 100.0 if len(speech_idx) else np.zeros(len(times))
+raw_alarm_prob = probs[:, alarm_idx].sum(axis=1) * 100.0 if len(alarm_idx) else np.zeros(len(times))
+alarm_prob_array = np.clip(raw_alarm_prob * alarm_multiplier, 0, 100.0)
 
-instruction_confidence = max(0.0, 1.0 - (speech_fraction * loud_volatility)) * 100
+# 3. File-Level Aggregation for SRI
+avg_db = float(np.mean(db_array))
+speech_fraction = float(np.mean(speech_prob_array)) / 100.0
+peak_alarm = float(np.max(alarm_prob_array)) / 100.0
 
-# alarm spikes/min
+# 4. Volatility (Original / 100.0 scaling)
+loud_volatility = float(np.std(db_array)) / 100.0
+
+instruction_confidence = max(0.0, 1.0 - (speech_fraction * loud_volatility)) * 100.0
+
+# 5. Alarm Spikes (Original / 20.0 scaling)
 alarm_spikes_pm = alarm_spikes_per_minute(
-    alarm_prob, times, height=float(spike_height), distance_sec=float(spike_distance)
+    alarm_prob_array, times, height=spike_height_pct, distance_sec=spike_distance_sec
 )
 alarm_spikes_norm = min(alarm_spikes_pm / 20.0, 1.0)
 
 # -----------------------------
-# SRI
+# SRI Calculation
 # -----------------------------
-vol_contrib = avg_loudness * w_volume
+# 6. Volume Sensitivity (Original / 100.0 scaling)
+db_norm = min(avg_db / 100.0, 1.0)
+
+vol_contrib = db_norm * w_volume
 alarm_contrib = peak_alarm * w_alarm
 speech_contrib = speech_fraction * w_speech
-volatility_contrib = min(loud_volatility * 2.0, 1.0) * w_volat
+volatility_contrib = loud_volatility * w_volat
 spike_contrib = alarm_spikes_norm * w_spike
 
-sri_score = vol_contrib + alarm_contrib + speech_contrib + volatility_contrib + spike_contrib
+sri_score = float(vol_contrib + alarm_contrib + speech_contrib + volatility_contrib + spike_contrib)
 
 components = {
     "High Volume Levels": vol_contrib,
@@ -161,38 +171,39 @@ st.subheader("Global Surgical Risk Index (SRI)")
 
 if sri_score < 40:
     st.success(f"🟢 **LOW RISK: {sri_score:.1f} / 100** (Environment is stable)")
-elif sri_score < 75:
+elif sri_score < critical_threshold:
     st.warning(f"🟡 **ELEVATED RISK: {sri_score:.1f} / 100**\n\n**Primary Stressor:** {top_stressor}")
 else:
     st.error(f"🔴 **CRITICAL RISK: {sri_score:.1f} / 100**\n\n**Primary Stressor:** {top_stressor}")
+    # NO AUDIO ALERT IN THIS FILE
 
 st.markdown("---")
 
 c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
 c1.metric("Duration", f"{duration_sec:.1f}s")
-c2.metric("Speech", f"{speech_fraction:.2f}")
-c3.metric("Peak Alarm", f"{peak_alarm:.2f}")
-c4.metric("Avg Loudness", f"{avg_loudness:.2f}")
-c5.metric("Volatility", f"{loud_volatility:.2f}")
+c2.metric("Speech", f"{speech_fraction*100:.1f}%")
+c3.metric("Peak Alarm", f"{peak_alarm*100:.1f}%")
+c4.metric("Avg Loudness", f"{avg_db:.1f} dB")
+c5.metric("Volatility", f"{float(np.std(db_array)):.1f} dB (Dev)")
 c6.metric("Alarm Spikes/min", f"{alarm_spikes_pm:.1f}")
 c7.metric("Instr. Clarity", f"{instruction_confidence:.1f}%")
 
 # timeline plot
 timeline = pd.DataFrame({
     "time_sec": times,
-    "loud_norm": loud_norm,
-    "speech_prob": speech_prob,
-    "alarm_prob": alarm_prob,
+    "Volume (dB)": db_array,
+    "Speech Prob (%)": speech_prob_array,
+    "Alarm Prob (%)": alarm_prob_array,
 })
 
 st.subheader("Post-Op Timeline Analysis")
 fig = plt.figure()
-plt.plot(timeline["time_sec"], timeline["loud_norm"], label="Loudness (norm)")
-plt.plot(timeline["time_sec"], timeline["speech_prob"], label="Speech prob")
-plt.plot(timeline["time_sec"], timeline["alarm_prob"], label="Alarm prob")
-plt.ylim(0, 1.05)
+plt.plot(timeline["time_sec"], timeline["Volume (dB)"], label="Loudness (dB)")
+plt.plot(timeline["time_sec"], timeline["Speech Prob (%)"], label="Speech prob (%)")
+plt.plot(timeline["time_sec"], timeline["Alarm Prob (%)"], label="Alarm prob (%)")
+plt.ylim(0, 105)
 plt.xlabel("Time (sec)")
-plt.ylabel("Intensity (0..1)")
+plt.ylabel("Metrics (0-100)")
 plt.legend()
 st.pyplot(fig)
 
