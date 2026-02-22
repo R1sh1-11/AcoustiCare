@@ -1,4 +1,4 @@
-# 🎙️ AcoustiCare: OR Soundscape Risk Sentinel
+# 🎙️ AcoustiCare: Hear the Risk, Save the Patient
 
 ## 🏥 Overview
 Operating rooms are acoustically complex environments. Between bone saws, overlapping conversations, and constant monitor beeps, surgeons suffer from severe **cognitive overload** and **alarm fatigue**. 
