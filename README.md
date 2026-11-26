@@ -8,8 +8,8 @@ Operating rooms are acoustically complex environments. Between bone saws, overla
 
 ## Key Features
 * **🔴 Live OR Monitor (`live_dashboard.py`):** Real-time acoustic analysis tracking live volume, speech density, and alarm probabilities using a browser-based dashboard.
-* **📂 Post-Op Audit Dashboard (`dashboard.py`):** A secure file-uploader for hospital administrators to review post-operative acoustic logs and identify environmental stressors.
-* **🧠 Advanced Spike Detection:** Uses `scipy.signal` to track actual *Alarm Spikes per Minute*, moving beyond simple probability to clinical-grade event tracking.
+* **📂 Post-Op Audit Dashboard (`dashboard.py`):** A file-uploader for hospital administrators to review post-operative acoustic logs and identify environmental stressors.
+* **🧠 Advanced Spike Detection:** Uses `scipy.signal` to track actual *Alarm Spikes per Minute*, moving beyond simple probability to event tracking.
 * **📥 Audit Logs (CSV Export):** Automatically logs "Critical Risk Events" (SRI > 60) with timestamp and primary stressor, exportable to CSV for post-op review.
 
 ## The Tech Stack
