@@ -1,4 +1,5 @@
 # AcoustiCare: Hear the Risk, Save the Patient
+Awarded Best Use of ElevenLabs at Hack@Davidson 2026.
 
 ## Overview
 Operating rooms are acoustically complex environments. Between bone saws, overlapping conversations, and constant monitor beeps, surgeons suffer from severe **cognitive overload** and **alarm fatigue**. 
@@ -9,11 +10,11 @@ Operating rooms are acoustically complex environments. Between bone saws, overla
 * **🔴 Live OR Monitor (`live_dashboard.py`):** Real-time acoustic analysis tracking live volume, speech density, and alarm probabilities using a browser-based dashboard.
 * **📂 Post-Op Audit Dashboard (`dashboard.py`):** A secure file-uploader for hospital administrators to review post-operative acoustic logs and identify environmental stressors.
 * **🧠 Advanced Spike Detection:** Uses `scipy.signal` to track actual *Alarm Spikes per Minute*, moving beyond simple probability to clinical-grade event tracking.
-* **📥 Immutable Audit Logs:** Automatically logs "Critical Risk Events" (SRI > 60) with timestamp and primary stressor, exportable to CSV for post-op review.
+* **📥 Audit Logs (CSV Export):** Automatically logs "Critical Risk Events" (SRI > 60) with timestamp and primary stressor, exportable to CSV for post-op review.
 
 ## The Tech Stack
 * **Frontend:** Streamlit
-* **Edge AI:** TensorFlow Hub (YAMNet) for localized, HIPAA-compliant audio classification
+* **Edge AI:** TensorFlow Hub (YAMNet) for localized audio classification
 * **Audio Processing:** PyAudio, Librosa
 * **Math & Data:** NumPy, Pandas, SciPy
 
@@ -21,7 +22,7 @@ Operating rooms are acoustically complex environments. Between bone saws, overla
 
 **1. Clone the repository**
 ```bash
-git clone [https://github.com/R1sh1-11/AcoustiCare.git](https://github.com/R1sh1-11/AcoustiCare.git)
+git clone https://github.com/R1sh1-11/AcoustiCare.git
 cd AcoustiCare
 ```
 
